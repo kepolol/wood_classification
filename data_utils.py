@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
 import os
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -54,11 +55,15 @@ class WoodDataset(Dataset):
             ])
         self.data = pd.DataFrame(columns=['img_path', 'target'])
         if is_test:
-            self.data.loc[:, 'img_path'] = os.listdir(os.path.join(img_dir, 'test'))
+            self.data.loc[:, 'img_path'] = [
+                os.path.join(img_dir, 'test', f) for f in os.listdir(os.path.join(img_dir, 'test'))
+            ]
         else:
             all_data = []
             for trg in ['drova', '1', '3']:
-                files = os.listdir(os.path.join(img_dir, 'train', trg))
+                files = [
+                    os.path.join(img_dir, 'train', trg, f) for f in os.listdir(os.path.join(img_dir, 'train', trg))
+                ]
                 all_data.append(pd.DataFrame({'img_path': files, 'target': [trg] * len(files)}))
             self.data = pd.concat(all_data, ignore_index=True)
             train, val, test = train_val_test_split(self.data, **train_val_test_split_params)
@@ -70,7 +75,7 @@ class WoodDataset(Dataset):
                 self.data = test
             else:
                 raise ValueError('Выбери "train", "valid" или "test"')
-            self.data.loc[:, 'target'] = self.data.target.replace(target_mapping)
+            self.data.loc[:, 'target'] = self.data.target.map(lambda x: target_mapping[x])
         self.data = self.data.reset_index(drop=True)
 
     def __len__(self):
@@ -81,4 +86,4 @@ class WoodDataset(Dataset):
         in_img = Image.open(path)
         in_img = self.img_transforms(in_img)
         target = torch.tensor(self.data.loc[idx, 'target'])
-        return {'image': in_img, 'target': target, 'img_path': path}
+        return {'image': in_img, 'target': np.argmax(target), 'img_path': path}
