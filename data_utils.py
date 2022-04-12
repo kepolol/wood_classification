@@ -37,6 +37,7 @@ class WoodDataset(Dataset):
         :param img_dir: путь до папки с картинками. Считается, что структура такая же, как и в гугл диске.
         :param is_test: является ли этот датасет оценочным (его пушить на каггл)?
         """
+        self.task_type = task_type
         if task_type == 'classification':
             target_mapping = {'drova': [0, 0, 1], '1': [1, 0, 0], '3': [0, 1, 0]}
         elif task_type == 'ranking':
@@ -86,4 +87,7 @@ class WoodDataset(Dataset):
         in_img = Image.open(path)
         in_img = self.img_transforms(in_img)
         target = torch.tensor(self.data.loc[idx, 'target'])
-        return {'image': in_img, 'target': np.argmax(target), 'img_path': path}
+        if self.task_type == 'classification':
+            return {'image': in_img, 'target': np.argmax(target), 'img_path': path}
+        elif self.task_type == 'ranking':
+            return {'image': in_img, 'target': torch.tensor(target, dtype=torch.float), 'img_path': path}
