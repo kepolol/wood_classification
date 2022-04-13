@@ -12,8 +12,13 @@ def train_val_test_split(data, test_size=None,
                          valid_size=None,
                          random_state=42,
                          stratify=None):
-    train_valid, test = train_test_split(data, test_size=test_size, random_state=random_state,  shuffle=True,
+    train_valid, test = train_test_split(data, test_size=valid_size if test_size == 0 else test_size,
+                                         random_state=random_state,  shuffle=True,
                                          stratify=data[stratify] if stratify else None)
+    if test_size == 0:
+        train_valid = train_valid.reset_index(drop=True)
+        test = test.reset_index(drop=True)
+        return train_valid, test, None
     train, valid = train_test_split(train_valid, test_size=valid_size/(1-test_size),
                                     random_state=random_state, shuffle=True,
                                     stratify=train_valid[stratify] if stratify else None)
